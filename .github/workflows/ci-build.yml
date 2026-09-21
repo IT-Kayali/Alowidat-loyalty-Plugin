@@ -73,8 +73,8 @@ jobs:
           TAG="v$VERSION"
           ZIP="it-kayali-loyalty-$VERSION.zip"
           awk -v version="$VERSION" '
-            $0 ~ "^## \\[" version "\\]" { capture=1; next }
-            capture && /^## \\[/ { exit }
+            index($0, "## [" version "]") == 1 { capture=1; next }
+            capture && index($0, "## [") == 1 { exit }
             capture { print }
           ' CHANGELOG.md > release-notes.md
           if gh release view "$TAG" >/dev/null 2>&1; then
