@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - 'phase2/**'
+      - 'phase*/**'
   pull_request:
   workflow_dispatch:
 
