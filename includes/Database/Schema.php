@@ -47,7 +47,7 @@ final class Schema
             PRIMARY KEY  (id),
             UNIQUE KEY member_uuid (member_uuid),
             UNIQUE KEY email_normalized (email_normalized),
-            KEY pending_email_normalized (pending_email_normalized),
+            UNIQUE KEY pending_email_normalized (pending_email_normalized),
             KEY status (status)
         ) {$charset_collate};";
 

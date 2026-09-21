@@ -50,7 +50,7 @@ jobs:
           VERSION="$(sed -n 's/^ \* Version:[[:space:]]*//p' it-kayali-loyalty.php | head -n1)"
           ROOT="$RUNNER_TEMP/package"
           mkdir -p "$ROOT/it-kayali-loyalty"
-          rsync -a ./ "$ROOT/it-kayali-loyalty/"             --exclude '.git/'             --exclude '.github/'             --exclude 'build/'             --exclude '*.zip'
+          rsync -a ./ "$ROOT/it-kayali-loyalty/"             --exclude '.git/'             --exclude '.github/'             --exclude '.gitignore'             --exclude '.gitkeep'             --exclude 'build/'             --exclude '*.zip'
           cd "$ROOT"
           zip -qr "$GITHUB_WORKSPACE/it-kayali-loyalty-$VERSION.zip" it-kayali-loyalty
 

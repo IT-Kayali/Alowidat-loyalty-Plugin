@@ -138,7 +138,7 @@ final class AccountService
             return new \WP_Error('rate_limited', __('Zu viele Anmeldeversuche. Bitte versuche es später erneut.', 'it-kayali-loyalty'));
         }
 
-        return wp_signon(
+        $user = wp_signon(
             array(
                 'user_login'    => $identifier,
                 'user_password' => $password,
@@ -146,6 +146,18 @@ final class AccountService
             ),
             is_ssl()
         );
+
+        if (is_wp_error($user)) {
+            return $user;
+        }
+
+        $member = $this->members->findByWpUserId((int) $user->ID);
+        if ($member && ('active' !== (string) $member['status'] || empty($member['email_verified_at']))) {
+            wp_logout();
+            return new \WP_Error('email_unverified', __('Bitte bestätige zuerst deine E-Mail-Adresse.', 'it-kayali-loyalty'));
+        }
+
+        return $user;
     }
 
     public function requestMagicLink(string $email): void
@@ -294,15 +306,19 @@ final class AccountService
             return new \WP_Error('email_in_use', __('Diese E-Mail-Adresse wird bereits verwendet.', 'it-kayali-loyalty'));
         }
 
-        if (! $this->members->confirmPendingEmail($member_id, $new_email)) {
-            return new \WP_Error('email_change_failed', __('Die neue E-Mail-Adresse konnte nicht übernommen werden.', 'it-kayali-loyalty'));
-        }
-
+        $old_email = MemberRepository::normalizeEmail((string) $member['email']);
         $result = wp_update_user(array('ID' => $user_id, 'user_email' => $new_email));
         if (is_wp_error($result)) {
             return new \WP_Error('wp_email_change_failed', __('Die E-Mail-Adresse des Benutzerkontos konnte nicht aktualisiert werden.', 'it-kayali-loyalty'));
         }
 
+        if (! $this->members->confirmPendingEmail($member_id, $new_email)) {
+            wp_update_user(array('ID' => $user_id, 'user_email' => $old_email));
+            clean_user_cache($user_id);
+            return new \WP_Error('email_change_failed', __('Die neue E-Mail-Adresse konnte nicht übernommen werden.', 'it-kayali-loyalty'));
+        }
+
+        clean_user_cache($user_id);
         return true;
     }
 

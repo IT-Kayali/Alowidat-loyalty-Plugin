@@ -19,6 +19,9 @@ All notable changes to **IT-Kayali Loyalty** are documented here.
 - Name editing.
 - Pending-email workflow: the old email remains valid until the new email is confirmed.
 - wp-admin blocking and admin-bar hiding for restricted loyalty customer/staff roles.
+- Pending/unverified loyalty customers are kept in verification-only state even if a WordPress session exists.
+- Email-change confirmation updates the linked WordPress account first and rolls it back if the loyalty record cannot be finalized.
+- Pending email addresses are uniqueness-protected at database level.
 - Schema version 2 with pending-email fields and `itk_loyalty_tokens` table.
 - Responsive frontend account styling.
 

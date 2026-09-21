@@ -28,6 +28,7 @@ Implemented:
 - customer account view with current ledger-derived point balance
 - profile update for name and email
 - email changes remain pending until the new address is verified; the old address remains valid until then
+- database-level uniqueness protection for pending email changes and rollback protection when the linked WordPress email cannot be finalized
 - optional integration contract so WooCommerce and helloCash can be added later as adapters
 - non-destructive deactivation/uninstall behavior by default
 
@@ -133,6 +134,7 @@ Current protections include:
 - WordPress prepared queries for lookups
 - dedicated capabilities and restricted roles
 - wp-admin blocking for loyalty customer/staff roles
+- verification-only account state for pending loyalty customers; unverified accounts cannot use the active loyalty dashboard
 - admin-bar hiding for restricted loyalty roles
 - random one-time verification/Magic tokens stored only as hashes
 - token expiry and one-time consumption

@@ -30,7 +30,19 @@ final class FrontendController
     public function enqueueAssets(): void
     {
         $page_id = AccountPage::id();
-        if ($page_id <= 0 || ! is_page($page_id)) {
+        $should_enqueue = $page_id > 0 && is_page($page_id);
+
+        if (! $should_enqueue) {
+            global $post;
+            if ($post instanceof \WP_Post) {
+                $content = (string) $post->post_content;
+                $should_enqueue = has_shortcode($content, 'itk_loyalty_account')
+                    || has_shortcode($content, 'itk_loyalty_login')
+                    || has_shortcode($content, 'itk_loyalty_register');
+            }
+        }
+
+        if (! $should_enqueue) {
             return;
         }
 
@@ -96,6 +108,10 @@ final class FrontendController
                 . '<p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="' . esc_url(wp_logout_url(AccountPage::url())) . '">' . esc_html__('Abmelden', 'it-kayali-loyalty') . '</a></p>'
                 . '</section>'
             );
+        }
+
+        if ('active' !== (string) $member['status'] || empty($member['email_verified_at'])) {
+            return $this->wrap($this->renderMessages() . $this->renderVerificationPending($member));
         }
 
         return $this->wrap($this->renderMessages() . $this->renderDashboard($member));
@@ -289,6 +305,26 @@ final class FrontendController
             </label>
             <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Treuekonto erstellen', 'it-kayali-loyalty'); ?></button>
         </form>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private function renderVerificationPending(array $member): string
+    {
+        ob_start();
+        ?>
+        <section class="itk-loyalty-panel">
+            <h2><?php echo esc_html__('E-Mail bestätigen', 'it-kayali-loyalty'); ?></h2>
+            <p><?php echo esc_html__('Dein Treuekonto wurde angelegt, ist aber noch nicht freigeschaltet.', 'it-kayali-loyalty'); ?></p>
+            <p class="itk-loyalty-muted"><?php echo esc_html((string) $member['email']); ?></p>
+            <form method="post" class="itk-loyalty-form">
+                <?php wp_nonce_field('itk_loyalty_resend', '_itk_loyalty_nonce'); ?>
+                <input type="hidden" name="itk_loyalty_action" value="resend_verification">
+                <input type="hidden" name="email" value="<?php echo esc_attr((string) $member['email']); ?>">
+                <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Bestätigungslink erneut senden', 'it-kayali-loyalty'); ?></button>
+            </form>
+            <p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="<?php echo esc_url(wp_logout_url(AccountPage::url())); ?>"><?php echo esc_html__('Abmelden', 'it-kayali-loyalty'); ?></a></p>
+        </section>
         <?php
         return (string) ob_get_clean();
     }
