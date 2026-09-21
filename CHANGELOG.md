@@ -2,6 +2,30 @@
 
 All notable changes to **IT-Kayali Loyalty** are documented here.
 
+## [0.3.1] - 2026-09-22
+
+### Changed
+
+- The native WooCommerce **My Account** login page remains available for logged-out visitors and is no longer redirected to the standalone Treuekonto page.
+- The standalone `/treuekonto/` page remains available for loyalty account creation, password login and Magic Link.
+- Loyalty-only customers now set a personal password as part of the first email-confirmation flow; the account is activated only after the password is saved.
+- After confirmation, the same loyalty account can sign in with email + password through either login page.
+- Magic-Link emails now contain two independent one-time links: a 15-minute login link and a 60-minute password setup/change link.
+- Existing loyalty customers created before 0.3.1 can use the password link in a Magic-Link email to establish a known password without creating a new account.
+
+### Security
+
+- Password setup uses a dedicated hashed one-time token type and never stores raw setup tokens in the database.
+- Password validation occurs before consuming a verification/password token so correctable input errors do not invalidate the link.
+- Verification still uses the original one-time email token; WooCommerce customers that already possess a password keep the direct verification flow.
+
+### Verified
+
+- PHP syntax validation passes for all plugin PHP files.
+- Plugin header/runtime/readme versions are aligned at `0.3.1`.
+- No database schema migration is required; schema version 2 remains current.
+- Installable ZIP is built from the same GitHub commit by CI.
+
 ## [0.3.0] - 2026-09-21
 
 ### Added

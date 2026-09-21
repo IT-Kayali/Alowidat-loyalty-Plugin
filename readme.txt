@@ -3,7 +3,7 @@ Contributors: it-kayali
 Tags: loyalty, points, rewards, stamp-card, woocommerce
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: Proprietary
 
 Modular loyalty and customer-account foundation for WordPress with optional WooCommerce integration.
@@ -12,7 +12,7 @@ Modular loyalty and customer-account foundation for WordPress with optional WooC
 
 IT-Kayali Loyalty is the central loyalty system being developed for Alowidat.
 
-Version 0.3.0 adds Phase 3 WooCommerce account linking on top of the loyalty customer account flow:
+Version 0.3.1 keeps both the normal WooCommerce My Account login and the standalone Treuekonto login/registration page, while adding secure password setup for loyalty customers:
 
 * registration with name and email only
 * email verification
@@ -31,8 +31,11 @@ Version 0.3.0 adds Phase 3 WooCommerce account linking on top of the loyalty cus
 * existing WooCommerce customers can explicitly activate loyalty from Treuekonto
 * loyalty-only customers can explicitly upgrade the same user to a WooCommerce customer account
 * member UUID, ledger balance and loyalty history are preserved during the shop-account upgrade
-* all customer types use the same shared login; logged-out WooCommerce My Account redirects to the Treuekonto login page
+* the normal WooCommerce My Account login remains available and the standalone Treuekonto login/registration page remains available
 * linked loyalty customers change their account email only through Treuekonto so email verification cannot be bypassed
+* loyalty-only email confirmation requires a personal password before activation
+* after confirmation the same loyalty account can sign in with email + password on either login page
+* Magic-Link emails also include a separate 60-minute one-time password setup/change link for existing or passwordless loyalty accounts
 * German-style membership date display and theme-resistant loyalty buttons
 
 Existing WordPress/WooCommerce users are never silently enrolled into loyalty. Version 0.3.0 provides explicit opt-in from the authenticated WooCommerce account.
@@ -60,7 +63,7 @@ Optional standalone loyalty registration form.
 
 == Frequently Asked Questions ==
 
-= Does version 0.3.0 already award points? =
+= Does version 0.3.1 already award points? =
 
 No. It can display the current ledger-derived balance, but earning/redemption services are not active yet.
 
@@ -74,7 +77,7 @@ To prevent duplicate identities and silent enrollment. The customer should log i
 
 = How does a loyalty-only customer log in? =
 
-After email verification, the intended method is a one-time Magic Link sent to the verified email address. The common page also contains the normal WordPress password login for existing accounts.
+During the first email confirmation the customer sets a personal password. Afterwards the same loyalty account can log in with email + password on either the Treuekonto page or the normal WooCommerce My Account page. Magic Link remains available as an additional option, and its email also contains a secure password setup/change link.
 
 = What happens when a customer changes email? =
 
@@ -85,6 +88,14 @@ The new address remains pending until it is verified. The previous email remains
 No. Deactivation is non-destructive. Uninstall also preserves loyalty data by default.
 
 == Changelog ==
+
+= 0.3.1 =
+* Keep the normal WooCommerce My Account login page instead of redirecting logged-out visitors to Treuekonto.
+* Keep the standalone Treuekonto page for account creation, password login and Magic Link.
+* Require loyalty-only customers to set a personal password while confirming the first verification email.
+* Allow the same loyalty account to log in with email + password on both Treuekonto and WooCommerce My Account.
+* Add a separate 60-minute one-time password setup/change link to Magic-Link emails.
+* Give existing pre-0.3.1 loyalty accounts a secure path to set a known password without recreating the account.
 
 = 0.3.0 =
 * Add explicit loyalty opt-in for existing WooCommerce customers.

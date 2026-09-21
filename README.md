@@ -1,12 +1,12 @@
 # IT-Kayali Loyalty
 
-**Current version:** 0.3.0
+**Current version:** 0.3.1
 
 IT-Kayali Loyalty is a modular WordPress loyalty foundation for Alowidat. The long-term goal is one central loyalty account per customer across the website, optional WooCommerce and the physical shop. WooCommerce remains optional so the loyalty core can operate independently.
 
 ## Phase 3 status
 
-Version 0.3.0 adds explicit two-way account linking: existing WooCommerce customers can voluntarily activate loyalty, and loyalty-only customers can upgrade the same account to a WooCommerce shop account without replacing their loyalty identity.
+Version 0.3.1 keeps the normal WooCommerce **My Account** login page and the standalone **Treuekonto** login/registration page side by side. Loyalty-only customers now set a real password while confirming their email, so the same account can sign in through either login page; Magic-Link emails also provide a secure password setup/change link.
 
 Implemented:
 
@@ -83,7 +83,7 @@ Optional standalone registration form. Normally `[itk_loyalty_account]` is prefe
 
 Internal role key: `itk_loyalty_customer`
 
-This role is created for loyalty-only customers. The password is generated internally; the intended primary sign-in method is the email Magic Link. Customers have no normal wp-admin access and no admin bar.
+This role is created for loyalty-only customers. A random bootstrap password is generated internally at account creation and is never shown. During email confirmation the customer must set a personal password. After that the same account can sign in through both the standalone Treuekonto login and the normal WooCommerce My Account login; Magic Link remains available as an additional passwordless option. Customers have no normal wp-admin access and no admin bar.
 
 ### Loyalty Staff
 
@@ -100,16 +100,17 @@ The actual staff frontend is Phase 6.
 
 ## Customer flow in 0.3.0
 
-1. Customer opens the shared Treuekonto page.
+1. Customer opens the standalone Treuekonto page.
 2. New loyalty-only customer enters **name + email**.
 3. The system creates an independent loyalty member, a restricted WordPress user link and a one-time verification token.
-4. Customer confirms the email through the emailed link.
-5. Verification activates the loyalty member and signs the customer in.
-6. Later logins can use a 15-minute one-time Magic Link.
-7. When WooCommerce is active, the logged-in customer lands in `/my-account/treuekonto/`.
-8. Loyalty-only customers see only **Treuekonto** and **Abmelden** in the account menu.
-9. Name can be changed immediately.
-10. A new email address is stored only as pending until the new mailbox confirms it. The old email remains authoritative meanwhile.
+4. The verification email opens **E-Mail bestätigen & Passwort festlegen**.
+5. The customer chooses a personal password; only then is the email confirmed, the loyalty member activated and the customer signed in.
+6. The same loyalty account can thereafter sign in with **email + password** on either `/treuekonto/` or the normal WooCommerce `/my-account/` login page.
+7. Magic Link remains available. Its email also contains a separate one-time password setup/change link, which gives existing pre-0.3.1 loyalty accounts a migration path to a known password.
+8. When WooCommerce is active, the logged-in loyalty-only customer lands in `/my-account/treuekonto/`.
+9. Loyalty-only customers see only **Treuekonto** and **Abmelden** in the account menu.
+10. Name can be changed immediately.
+11. A new email address is stored only as pending until the new mailbox confirms it. The old email remains authoritative meanwhile.
 
 Existing WordPress/WooCommerce users are deliberately **not** silently enrolled during loyalty registration.
 
@@ -161,6 +162,7 @@ Current protections include:
 - verification-only account state for pending loyalty customers; unverified accounts cannot use the active loyalty dashboard
 - admin-bar hiding for restricted loyalty roles
 - random one-time verification/Magic tokens stored only as hashes
+- separate one-time password-setup tokens stored only as SHA-256 hashes; password links expire after 60 minutes
 - token expiry and one-time consumption
 - rate limiting for public email-triggering actions
 - generic Magic-Link/resend responses to reduce account enumeration
@@ -172,7 +174,7 @@ Later points/redemption endpoints will additionally require transactional lockin
 
 ## Points and rewards rules
 
-These business rules remain planned but are **not active in version 0.3.0**:
+These business rules remain planned but are **not active in version 0.3.1**:
 
 - eligible 50 ml perfume: 1 point per purchased unit
 - eligible 100 ml perfume: 1 point per purchased unit
@@ -196,7 +198,7 @@ These business rules remain planned but are **not active in version 0.3.0**:
 
 1. **0.1.x / Phase 1:** project foundation
 2. **0.2.0–0.2.2 / Phase 2:** loyalty-only customer registration, verification, shared login/Magic Link, account data and WooCommerce My Account integration
-3. **0.3.0 / Phase 3:** WooCommerce explicit opt-in/linking and loyalty-to-shop upgrade without changing `member_uuid`, points or history
+3. **0.3.0–0.3.1 / Phase 3:** WooCommerce explicit opt-in/linking, loyalty-to-shop upgrade, dual login pages and verified password setup without changing `member_uuid`, points or history
 4. **Phase 4:** digital card, 10-stamp progress, full-card count and private QR identity
 5. **Phase 5:** WordPress administration
 6. **Phase 6:** frontend staff workflow and scanner
