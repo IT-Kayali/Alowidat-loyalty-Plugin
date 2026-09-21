@@ -12,6 +12,9 @@ use ITKayali\Loyalty\Integrations\WooCommerce\AccountLinker;
 
 final class FrontendController
 {
+    private ?string $verificationPasswordToken = null;
+    private ?string $passwordSetupToken = null;
+
     public function __construct(
         private AccountService $service,
         private MemberRepository $members,
@@ -82,6 +85,12 @@ final class FrontendController
             case 'resend_verification':
                 $this->handleResendVerification();
                 break;
+            case 'complete_verification_password':
+                $this->handleVerificationPassword();
+                break;
+            case 'set_password':
+                $this->handlePasswordSetup();
+                break;
             case 'update_profile':
                 $this->handleProfileUpdate();
                 break;
@@ -96,6 +105,20 @@ final class FrontendController
 
     public function renderAccount(): string
     {
+        if (null !== $this->verificationPasswordToken) {
+            return $this->wrap(
+                $this->renderMessages()
+                . $this->renderPasswordSetupForm($this->verificationPasswordToken, true)
+            );
+        }
+
+        if (null !== $this->passwordSetupToken) {
+            return $this->wrap(
+                $this->renderMessages()
+                . $this->renderPasswordSetupForm($this->passwordSetupToken, false)
+            );
+        }
+
         if (! is_user_logged_in()) {
             return $this->wrap(
                 $this->renderMessages()
@@ -158,8 +181,28 @@ final class FrontendController
         }
 
         if ('verify-email' === $action) {
+            $requires_password = $this->service->verificationRequiresPassword($token);
+
+            if (is_wp_error($requires_password)) {
+                $this->redirect('invalid_link');
+            }
+
+            if ($requires_password) {
+                $this->verificationPasswordToken = $token;
+                return;
+            }
+
             $result = $this->service->verifyEmail($token);
             $this->redirect(is_wp_error($result) ? 'invalid_link' : 'email_verified');
+        }
+
+        if ('password-setup' === $action) {
+            if (! $this->service->isPasswordSetupTokenValid($token)) {
+                $this->redirect('invalid_link');
+            }
+
+            $this->passwordSetupToken = $token;
+            return;
         }
 
         if ('magic-login' === $action) {
@@ -224,6 +267,66 @@ final class FrontendController
         $email = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
         $this->service->resendVerification((string) $email);
         $this->redirect('verification_requested');
+    }
+
+    private function handleVerificationPassword(): void
+    {
+        if (
+            ! isset($_POST['_itk_loyalty_nonce'])
+            || ! wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['_itk_loyalty_nonce'])),
+                'itk_loyalty_verification_password'
+            )
+        ) {
+            $this->redirect('security_error');
+        }
+
+        $token = isset($_POST['token']) ? sanitize_text_field(wp_unslash($_POST['token'])) : '';
+        $password = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : '';
+        $confirm = isset($_POST['password_confirm']) ? (string) wp_unslash($_POST['password_confirm']) : '';
+
+        $result = $this->service->completeVerificationWithPassword($token, $password, $confirm);
+        if (is_wp_error($result)) {
+            $code = $result->get_error_code();
+
+            if (in_array($code, array('password_mismatch', 'password_too_short'), true)) {
+                $this->redirectTokenForm('verify-email', $token, $code);
+            }
+
+            $this->redirect('invalid_link');
+        }
+
+        $this->redirect('email_verified_password_set');
+    }
+
+    private function handlePasswordSetup(): void
+    {
+        if (
+            ! isset($_POST['_itk_loyalty_nonce'])
+            || ! wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['_itk_loyalty_nonce'])),
+                'itk_loyalty_password_setup'
+            )
+        ) {
+            $this->redirect('security_error');
+        }
+
+        $token = isset($_POST['token']) ? sanitize_text_field(wp_unslash($_POST['token'])) : '';
+        $password = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : '';
+        $confirm = isset($_POST['password_confirm']) ? (string) wp_unslash($_POST['password_confirm']) : '';
+
+        $result = $this->service->setPasswordFromToken($token, $password, $confirm);
+        if (is_wp_error($result)) {
+            $code = $result->get_error_code();
+
+            if (in_array($code, array('password_mismatch', 'password_too_short'), true)) {
+                $this->redirectTokenForm('password-setup', $token, $code);
+            }
+
+            $this->redirect('invalid_link');
+        }
+
+        $this->redirect('password_set');
     }
 
     private function handleWooCommerceLoyaltyActivation(): void
@@ -312,7 +415,7 @@ final class FrontendController
         ob_start();
         ?>
         <h2><?php echo esc_html__('Anmelden', 'it-kayali-loyalty'); ?></h2>
-        <p class="itk-loyalty-muted"><?php echo esc_html__('Alle Kunden verwenden diesen gemeinsamen Login.', 'it-kayali-loyalty'); ?></p>
+        <p class="itk-loyalty-muted"><?php echo esc_html__('Du kannst dich hier mit E-Mail + Passwort oder per sicherem Login-Link anmelden.', 'it-kayali-loyalty'); ?></p>
 
         <form method="post" class="itk-loyalty-form">
             <?php wp_nonce_field('itk_loyalty_login', '_itk_loyalty_nonce'); ?>
@@ -332,6 +435,7 @@ final class FrontendController
         <div class="itk-loyalty-divider"><span><?php echo esc_html__('oder', 'it-kayali-loyalty'); ?></span></div>
 
         <h3><?php echo esc_html__('Login-Link per E-Mail', 'it-kayali-loyalty'); ?></h3>
+        <p class="itk-loyalty-muted"><?php echo esc_html__('Die E-Mail enthält zusätzlich einen sicheren Link, mit dem du dein Passwort festlegen oder ändern kannst.', 'it-kayali-loyalty'); ?></p>
         <form method="post" class="itk-loyalty-form">
             <?php wp_nonce_field('itk_loyalty_magic', '_itk_loyalty_nonce'); ?>
             <input type="hidden" name="itk_loyalty_action" value="magic_link">
@@ -377,6 +481,68 @@ final class FrontendController
             </label>
             <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Treuekonto erstellen', 'it-kayali-loyalty'); ?></button>
         </form>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private function renderPasswordSetupForm(string $token, bool $verify_email): string
+    {
+        ob_start();
+        ?>
+        <section class="itk-loyalty-panel">
+            <p class="itk-loyalty-eyebrow"><?php echo esc_html__('Treuekonto', 'it-kayali-loyalty'); ?></p>
+            <h2>
+                <?php
+                echo esc_html(
+                    $verify_email
+                        ? __('E-Mail bestätigen & Passwort festlegen', 'it-kayali-loyalty')
+                        : __('Passwort festlegen oder ändern', 'it-kayali-loyalty')
+                );
+                ?>
+            </h2>
+            <p class="itk-loyalty-muted">
+                <?php
+                echo esc_html(
+                    $verify_email
+                        ? __('Lege jetzt dein persönliches Passwort fest. Danach wird deine E-Mail bestätigt und du kannst dich auf beiden Login-Seiten mit E-Mail + Passwort anmelden.', 'it-kayali-loyalty')
+                        : __('Lege ein neues Passwort fest. Danach kannst du dich sowohl über Treuekonto als auch über die normale Mein-Konto-Seite anmelden.', 'it-kayali-loyalty')
+                );
+                ?>
+            </p>
+
+            <form method="post" class="itk-loyalty-form">
+                <?php
+                wp_nonce_field(
+                    $verify_email ? 'itk_loyalty_verification_password' : 'itk_loyalty_password_setup',
+                    '_itk_loyalty_nonce'
+                );
+                ?>
+                <input
+                    type="hidden"
+                    name="itk_loyalty_action"
+                    value="<?php echo esc_attr($verify_email ? 'complete_verification_password' : 'set_password'); ?>"
+                >
+                <input type="hidden" name="token" value="<?php echo esc_attr($token); ?>">
+                <label>
+                    <span><?php echo esc_html__('Neues Passwort', 'it-kayali-loyalty'); ?></span>
+                    <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+                </label>
+                <label>
+                    <span><?php echo esc_html__('Passwort wiederholen', 'it-kayali-loyalty'); ?></span>
+                    <input type="password" name="password_confirm" autocomplete="new-password" minlength="8" required>
+                </label>
+                <p class="itk-loyalty-muted"><?php echo esc_html__('Mindestens 8 Zeichen.', 'it-kayali-loyalty'); ?></p>
+                <button type="submit" class="itk-loyalty-button">
+                    <?php
+                    echo esc_html(
+                        $verify_email
+                            ? __('Bestätigen & Passwort speichern', 'it-kayali-loyalty')
+                            : __('Passwort speichern', 'it-kayali-loyalty')
+                    );
+                    ?>
+                </button>
+            </form>
+        </section>
         <?php
         return (string) ob_get_clean();
     }
@@ -505,6 +671,10 @@ final class FrontendController
             'registration_mail_failed' => array('error', __('Das Konto wurde angelegt, aber die E-Mail konnte nicht versendet werden. Bitte fordere den Bestätigungslink erneut an.', 'it-kayali-loyalty')),
             'registration_error'       => array('error', __('Die Registrierung konnte nicht abgeschlossen werden. Prüfe deine Angaben oder melde dich an, falls bereits ein Konto besteht.', 'it-kayali-loyalty')),
             'email_verified'           => array('success', __('E-Mail-Adresse bestätigt. Du bist jetzt angemeldet.', 'it-kayali-loyalty')),
+            'email_verified_password_set' => array('success', __('E-Mail-Adresse bestätigt und Passwort gespeichert. Du bist jetzt angemeldet.', 'it-kayali-loyalty')),
+            'password_set'             => array('success', __('Dein Passwort wurde gespeichert. Du bist jetzt angemeldet.', 'it-kayali-loyalty')),
+            'password_mismatch'        => array('error', __('Die beiden Passwörter stimmen nicht überein.', 'it-kayali-loyalty')),
+            'password_too_short'       => array('error', __('Das Passwort muss mindestens 8 Zeichen lang sein.', 'it-kayali-loyalty')),
             'magic_requested'          => array('info', __('Falls ein aktives Treuekonto zu dieser E-Mail-Adresse existiert, wurde ein Login-Link versendet.', 'it-kayali-loyalty')),
             'verification_requested'   => array('info', __('Falls ein unbestätigtes Treuekonto zu dieser E-Mail-Adresse existiert, wurde ein neuer Bestätigungslink versendet.', 'it-kayali-loyalty')),
             'logged_in'                => array('success', __('Erfolgreich angemeldet.', 'it-kayali-loyalty')),
@@ -535,6 +705,21 @@ final class FrontendController
     private function wrap(string $content): string
     {
         return '<div class="itk-loyalty-account">' . $content . '</div>';
+    }
+
+    private function redirectTokenForm(string $action, string $token, string $message): never
+    {
+        $url = add_query_arg(
+            array(
+                'itk-loyalty-action'  => $action,
+                'token'               => $token,
+                'itk-loyalty-message' => $message,
+            ),
+            AccountPage::url()
+        );
+
+        wp_safe_redirect($url);
+        exit;
     }
 
     private function redirect(string $message): never

@@ -14,6 +14,7 @@ final class TokenRepository
     public const TYPE_VERIFY_EMAIL = 'verify_email';
     public const TYPE_MAGIC_LOGIN = 'magic_login';
     public const TYPE_EMAIL_CHANGE = 'email_change';
+    public const TYPE_PASSWORD_SETUP = 'password_setup';
 
     public function create(int $member_id, int $wp_user_id, string $type, int $ttl_seconds, array $metadata = array()): string|\WP_Error
     {
@@ -58,6 +59,29 @@ final class TokenRepository
         }
 
         return $token;
+    }
+
+    public function findValid(string $token, string $type): ?array
+    {
+        global $wpdb;
+
+        if (strlen($token) < 32 || strlen($token) > 128) {
+            return null;
+        }
+
+        $hash = hash('sha256', $token);
+        $now  = gmdate('Y-m-d H:i:s');
+
+        $sql = $wpdb->prepare(
+            'SELECT * FROM ' . TableNames::tokens() . ' WHERE token_hash = %s AND type = %s AND used_at IS NULL AND expires_at >= %s LIMIT 1',
+            $hash,
+            $type,
+            $now
+        );
+
+        $row = $wpdb->get_row($sql, ARRAY_A);
+
+        return is_array($row) ? $row : null;
     }
 
     public function consume(string $token, string $type): ?array

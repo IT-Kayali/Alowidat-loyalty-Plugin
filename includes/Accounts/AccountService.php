@@ -74,7 +74,7 @@ final class AccountService
             return $token;
         }
 
-        if (! $this->mailer->sendVerification($email, $name, $token)) {
+        if (! $this->mailer->sendVerification($email, $name, $token, true)) {
             return new \WP_Error('mail_failed', __('Das Konto wurde angelegt, aber die Bestätigungs-E-Mail konnte nicht versendet werden. Bitte fordere den Bestätigungslink erneut an.', 'it-kayali-loyalty'));
         }
 
@@ -104,7 +104,97 @@ final class AccountService
             return;
         }
 
-        $this->mailer->sendVerification((string) $member['email'], (string) $member['name'], $token);
+        $this->mailer->sendVerification((string) $member['email'], (string) $member['name'], $token, true);
+    }
+
+    public function verificationRequiresPassword(string $token): bool|\WP_Error
+    {
+        $row = $this->tokens->findValid($token, TokenRepository::TYPE_VERIFY_EMAIL);
+        if (! $row) {
+            return new \WP_Error('invalid_token', __('Der Bestätigungslink ist ungültig oder abgelaufen.', 'it-kayali-loyalty'));
+        }
+
+        $user = get_user_by('id', (int) $row['wp_user_id']);
+        if (! $user instanceof \WP_User) {
+            return new \WP_Error('user_missing', __('Das Benutzerkonto wurde nicht gefunden.', 'it-kayali-loyalty'));
+        }
+
+        return $this->isLoyaltyOnlyUser($user);
+    }
+
+    public function completeVerificationWithPassword(string $token, string $password, string $password_confirm): int|\WP_Error
+    {
+        $password_result = $this->validateNewPassword($password, $password_confirm);
+        if (is_wp_error($password_result)) {
+            return $password_result;
+        }
+
+        $row = $this->tokens->findValid($token, TokenRepository::TYPE_VERIFY_EMAIL);
+        if (! $row) {
+            return new \WP_Error('invalid_token', __('Der Bestätigungslink ist ungültig oder abgelaufen.', 'it-kayali-loyalty'));
+        }
+
+        $user_id = (int) $row['wp_user_id'];
+        $user    = get_user_by('id', $user_id);
+        if (! $user instanceof \WP_User || ! $this->isLoyaltyOnlyUser($user)) {
+            return new \WP_Error('password_setup_not_required', __('Für dieses Konto ist diese Passwort-Einrichtung nicht vorgesehen.', 'it-kayali-loyalty'));
+        }
+
+        $consumed = $this->tokens->consume($token, TokenRepository::TYPE_VERIFY_EMAIL);
+        if (! $consumed) {
+            return new \WP_Error('invalid_token', __('Der Bestätigungslink ist ungültig oder wurde bereits verwendet.', 'it-kayali-loyalty'));
+        }
+
+        $member_id = (int) $consumed['member_id'];
+        if (! $this->members->markVerified($member_id)) {
+            return new \WP_Error('verification_failed', __('Die E-Mail-Adresse konnte nicht bestätigt werden.', 'it-kayali-loyalty'));
+        }
+
+        wp_set_password($password, $user_id);
+        clean_user_cache($user_id);
+
+        if (! $this->loginUser($user_id)) {
+            return new \WP_Error('login_failed', __('Die Anmeldung konnte nicht abgeschlossen werden.', 'it-kayali-loyalty'));
+        }
+
+        return $user_id;
+    }
+
+    public function isPasswordSetupTokenValid(string $token): bool
+    {
+        return null !== $this->tokens->findValid($token, TokenRepository::TYPE_PASSWORD_SETUP);
+    }
+
+    public function setPasswordFromToken(string $token, string $password, string $password_confirm): int|\WP_Error
+    {
+        $password_result = $this->validateNewPassword($password, $password_confirm);
+        if (is_wp_error($password_result)) {
+            return $password_result;
+        }
+
+        $row = $this->tokens->consume($token, TokenRepository::TYPE_PASSWORD_SETUP);
+        if (! $row) {
+            return new \WP_Error('invalid_token', __('Der Passwort-Link ist ungültig oder abgelaufen.', 'it-kayali-loyalty'));
+        }
+
+        $member = $this->members->findById((int) $row['member_id']);
+        if (! $member || 'active' !== (string) $member['status'] || empty($member['email_verified_at'])) {
+            return new \WP_Error('inactive_member', __('Das Treuekonto ist nicht aktiv.', 'it-kayali-loyalty'));
+        }
+
+        $user_id = (int) $row['wp_user_id'];
+        if (! get_user_by('id', $user_id)) {
+            return new \WP_Error('user_missing', __('Das Benutzerkonto wurde nicht gefunden.', 'it-kayali-loyalty'));
+        }
+
+        wp_set_password($password, $user_id);
+        clean_user_cache($user_id);
+
+        if (! $this->loginUser($user_id)) {
+            return new \WP_Error('login_failed', __('Die Anmeldung konnte nicht abgeschlossen werden.', 'it-kayali-loyalty'));
+        }
+
+        return $user_id;
     }
 
     public function verifyEmail(string $token): int|\WP_Error
@@ -187,7 +277,19 @@ final class AccountService
             return;
         }
 
-        $this->mailer->sendMagicLink((string) $member['email'], (string) $member['name'], $token);
+        $password_token = $this->tokens->create(
+            (int) $member['id'],
+            $user_id,
+            TokenRepository::TYPE_PASSWORD_SETUP,
+            HOUR_IN_SECONDS
+        );
+
+        $this->mailer->sendMagicLink(
+            (string) $member['email'],
+            (string) $member['name'],
+            $token,
+            is_wp_error($password_token) ? '' : $password_token
+        );
     }
 
     public function magicLogin(string $token): int|\WP_Error
@@ -323,6 +425,19 @@ final class AccountService
         }
 
         clean_user_cache($user_id);
+        return true;
+    }
+
+    private function validateNewPassword(string $password, string $password_confirm): true|\WP_Error
+    {
+        if ($password !== $password_confirm) {
+            return new \WP_Error('password_mismatch', __('Die beiden Passwörter stimmen nicht überein.', 'it-kayali-loyalty'));
+        }
+
+        if (strlen($password) < 8) {
+            return new \WP_Error('password_too_short', __('Das Passwort muss mindestens 8 Zeichen lang sein.', 'it-kayali-loyalty'));
+        }
+
         return true;
     }
 
