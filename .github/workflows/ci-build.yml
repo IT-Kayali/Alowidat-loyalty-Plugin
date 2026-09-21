@@ -1,0 +1,63 @@
+name: CI and Plugin ZIP
+
+on:
+  push:
+    branches:
+      - main
+      - 'phase2/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show PHP version
+        run: php -v
+
+      - name: Lint PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(find . -type f -name '*.php' -not -path './vendor/*' -print0)
+
+      - name: Verify version consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEADER_VERSION="$(sed -n 's/^ \* Version:[[:space:]]*//p' it-kayali-loyalty.php | head -n1)"
+          CONST_VERSION="$(sed -n "s/.*define('ITK_LOYALTY_VERSION',[[:space:]]*'\([^']*\)').*/\1/p" it-kayali-loyalty.php | head -n1)"
+          STABLE_TAG="$(sed -n 's/^Stable tag:[[:space:]]*//p' readme.txt | head -n1)"
+          echo "Header: $HEADER_VERSION"
+          echo "Constant: $CONST_VERSION"
+          echo "Stable tag: $STABLE_TAG"
+          test -n "$HEADER_VERSION"
+          test "$HEADER_VERSION" = "$CONST_VERSION"
+          test "$HEADER_VERSION" = "$STABLE_TAG"
+
+      - name: Build installable plugin ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/^ \* Version:[[:space:]]*//p' it-kayali-loyalty.php | head -n1)"
+          ROOT="$RUNNER_TEMP/package"
+          mkdir -p "$ROOT/it-kayali-loyalty"
+          rsync -a ./ "$ROOT/it-kayali-loyalty/"             --exclude '.git/'             --exclude '.github/'             --exclude 'build/'             --exclude '*.zip'
+          cd "$ROOT"
+          zip -qr "$GITHUB_WORKSPACE/it-kayali-loyalty-$VERSION.zip" it-kayali-loyalty
+
+      - name: Upload plugin ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: it-kayali-loyalty-plugin
+          path: it-kayali-loyalty-*.zip
+          if-no-files-found: error
+          retention-days: 30
