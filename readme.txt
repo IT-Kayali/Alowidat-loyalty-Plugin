@@ -17,7 +17,7 @@ Version 0.3.1 keeps both the normal WooCommerce My Account login and the standal
 * registration with name and email only
 * email verification
 * restricted loyalty customer role
-* common frontend login page
+* standalone Treuekonto login/registration page plus the normal WooCommerce My Account login
 * one-time Magic Link login for verified loyalty customers
 * resend-verification flow
 * customer profile with ledger-derived point balance
@@ -38,7 +38,7 @@ Version 0.3.1 keeps both the normal WooCommerce My Account login and the standal
 * Magic-Link emails also include a separate 60-minute one-time password setup/change link for existing or passwordless loyalty accounts
 * German-style membership date display and theme-resistant loyalty buttons
 
-Existing WordPress/WooCommerce users are never silently enrolled into loyalty. Version 0.3.0 provides explicit opt-in from the authenticated WooCommerce account.
+Existing WordPress/WooCommerce users are never silently enrolled into loyalty. Explicit opt-in is available from the authenticated WooCommerce account.
 
 Digital cards, QR, stamps, staff workflow, automatic WooCommerce point earning/reversals and reward redemption are later phases and are not exposed yet.
 

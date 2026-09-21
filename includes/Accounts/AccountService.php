@@ -428,7 +428,7 @@ final class AccountService
         return true;
     }
 
-    private function validateNewPassword(string $password, string $password_confirm): true|\WP_Error
+    private function validateNewPassword(string $password, string $password_confirm): bool|\WP_Error
     {
         if ($password !== $password_confirm) {
             return new \WP_Error('password_mismatch', __('Die beiden Passwörter stimmen nicht überein.', 'it-kayali-loyalty'));

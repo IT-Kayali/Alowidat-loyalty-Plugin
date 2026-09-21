@@ -53,7 +53,7 @@ Not implemented yet: digital cards, QR generation, stamps, staff scanner, reward
 1. Upload `it-kayali-loyalty.zip` in **WordPress → Plugins → Add New → Upload Plugin**.
 2. If version 0.1.0 is already installed, replace the existing plugin with the ZIP when WordPress asks.
 3. Keep the plugin active.
-4. Version 0.3.0 reuses schema version 2, creates/reuses the standalone **Treuekonto** page, registers the WooCommerce `/my-account/treuekonto/` endpoint, and enables explicit account linking when WooCommerce is active.
+4. Version 0.3.1 reuses schema version 2, creates/reuses the standalone **Treuekonto** page, registers the WooCommerce `/my-account/treuekonto/` endpoint, keeps the native WooCommerce login page, and enables explicit account linking when WooCommerce is active.
 5. Open the Treuekonto page and test registration with an email address that is not already used by a WordPress user.
 
 ## Shortcodes
@@ -98,7 +98,7 @@ Phase 1/2 grants only the minimal loyalty capabilities required by the later sta
 
 The actual staff frontend is Phase 6.
 
-## Customer flow in 0.3.0
+## Customer flow in 0.3.1
 
 1. Customer opens the standalone Treuekonto page.
 2. New loyalty-only customer enters **name + email**.
