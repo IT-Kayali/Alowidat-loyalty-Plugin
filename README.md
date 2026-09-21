@@ -1,12 +1,12 @@
 # IT-Kayali Loyalty
 
-**Current version:** 0.2.0
+**Current version:** 0.2.1
 
 IT-Kayali Loyalty is a modular WordPress loyalty foundation for Alowidat. The long-term goal is one central loyalty account per customer across the website, optional WooCommerce and the physical shop. WooCommerce remains optional so the loyalty core can operate independently.
 
 ## Phase 2 status
 
-Version 0.2.0 adds the first usable customer-account flow on top of the Phase 1 foundation.
+Version 0.2.1 is the stabilized Phase 2 customer-account release on top of the Phase 1 foundation.
 
 Implemented:
 
@@ -16,6 +16,7 @@ Implemented:
 - independent `member_uuid`; loyalty identity is not based on the WordPress/WooCommerce user ID
 - roles `itk_loyalty_customer` and `itk_loyalty_staff`
 - frontend-only access protection for loyalty customers/staff; no normal wp-admin access and no admin bar
+- WooCommerce My Account is blocked for loyalty-only customers and redirects to **Treuekonto**; future explicitly upgraded WooCommerce customers are exempt
 - automatically created **Treuekonto** page with `[itk_loyalty_account]`
 - customer registration with only name and email
 - duplicate protection against an existing loyalty email and against silently enrolling an existing WordPress/WooCommerce account
@@ -48,7 +49,7 @@ Not implemented yet: digital cards, QR generation, stamps, staff scanner, reward
 1. Upload `it-kayali-loyalty.zip` in **WordPress → Plugins → Add New → Upload Plugin**.
 2. If version 0.1.0 is already installed, replace the existing plugin with the ZIP when WordPress asks.
 3. Keep the plugin active.
-4. Version 0.2.0 automatically upgrades the schema and creates/reuses the **Treuekonto** page.
+4. Version 0.2.1 reuses schema version 2 and creates/reuses the **Treuekonto** page.
 5. Open the Treuekonto page and test registration with an email address that is not already used by a WordPress user.
 
 ## Shortcodes
@@ -93,7 +94,7 @@ Phase 1/2 grants only the minimal loyalty capabilities required by the later sta
 
 The actual staff frontend is Phase 6.
 
-## Customer flow in 0.2.0
+## Customer flow in 0.2.1
 
 1. Customer opens the shared Treuekonto page.
 2. New loyalty-only customer enters **name + email**.
@@ -160,6 +161,7 @@ These business rules remain planned but are **not active in version 0.2.0**:
 
 - email delivery depends on the WordPress mail configuration; production should use a reliable SMTP/provider setup
 - no WooCommerce loyalty opt-in or account upgrade yet
+- loyalty-only customers are intentionally redirected away from WooCommerce My Account until the explicit Phase 3 upgrade is implemented
 - no digital card, stamps or QR code yet
 - no admin dashboard yet
 - no staff frontend/scanner yet
@@ -170,7 +172,7 @@ These business rules remain planned but are **not active in version 0.2.0**:
 ## Roadmap
 
 1. **0.1.x / Phase 1:** project foundation
-2. **0.2.0 / Phase 2:** loyalty-only customer registration, verification, shared login/Magic Link and account data
+2. **0.2.0–0.2.1 / Phase 2:** loyalty-only customer registration, verification, shared login/Magic Link, account data and WooCommerce-account isolation
 3. **Phase 3:** WooCommerce explicit opt-in/linking and loyalty-to-shop upgrade without changing `member_uuid`, points or history
 4. **Phase 4:** digital card, 10-stamp progress, full-card count and private QR identity
 5. **Phase 5:** WordPress administration

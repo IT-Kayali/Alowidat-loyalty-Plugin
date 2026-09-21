@@ -380,7 +380,7 @@ final class FrontendController
         <section class="itk-loyalty-panel itk-loyalty-meta">
             <div><span><?php echo esc_html__('Status', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html('active' === (string) $member['status'] ? __('Aktiv', 'it-kayali-loyalty') : ucfirst((string) $member['status'])); ?></strong></div>
             <div><span><?php echo esc_html__('E-Mail bestätigt', 'it-kayali-loyalty'); ?></span><strong><?php echo ! empty($member['email_verified_at']) ? esc_html__('Ja', 'it-kayali-loyalty') : esc_html__('Nein', 'it-kayali-loyalty'); ?></strong></div>
-            <div><span><?php echo esc_html__('Mitglied seit', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html(mysql2date(get_option('date_format'), (string) $member['created_at'], true)); ?></strong></div>
+            <div><span><?php echo esc_html__('Mitglied seit', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html(mysql2date('d.m.Y', (string) $member['created_at'], true)); ?></strong></div>
         </section>
 
         <p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="<?php echo esc_url(wp_logout_url(AccountPage::url())); ?>"><?php echo esc_html__('Abmelden', 'it-kayali-loyalty'); ?></a></p>

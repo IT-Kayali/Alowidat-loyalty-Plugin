@@ -61,28 +61,47 @@
     border-color: var(--itk-gold);
 }
 
-.itk-loyalty-button {
-    display: inline-flex;
+.itk-loyalty-button,
+.itk-loyalty-account button.itk-loyalty-button {
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
     min-height: 44px;
-    border: 1px solid var(--itk-gold);
+    border: 1px solid var(--itk-gold) !important;
     border-radius: 12px;
     padding: .7rem 1rem;
-    background: var(--itk-gold);
+    background: var(--itk-gold) !important;
+    background-image: none !important;
     color: #fff !important;
     text-decoration: none !important;
+    text-shadow: none !important;
     font-weight: 700;
+    opacity: 1 !important;
+    filter: none !important;
     cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
-.itk-loyalty-button:hover {
-    background: var(--itk-gold-dark);
-    border-color: var(--itk-gold-dark);
+.itk-loyalty-button:hover,
+.itk-loyalty-account button.itk-loyalty-button:hover {
+    background: var(--itk-gold-dark) !important;
+    background-image: none !important;
+    border-color: var(--itk-gold-dark) !important;
+    color: #fff !important;
 }
 
-.itk-loyalty-button-secondary {
-    background: transparent;
+.itk-loyalty-button-secondary,
+.itk-loyalty-account button.itk-loyalty-button-secondary {
+    background: transparent !important;
+    background-image: none !important;
+    color: var(--itk-gold-dark) !important;
+}
+
+.itk-loyalty-button-secondary:hover,
+.itk-loyalty-account button.itk-loyalty-button-secondary:hover {
+    background: #f6ecd9 !important;
+    border-color: var(--itk-gold-dark) !important;
     color: var(--itk-gold-dark) !important;
 }
 

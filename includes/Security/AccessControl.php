@@ -15,6 +15,7 @@ final class AccessControl
     public static function register(): void
     {
         add_action('admin_init', array(self::class, 'blockRestrictedAdmin'));
+        add_action('template_redirect', array(self::class, 'blockLoyaltyOnlyWooAccount'), 1);
         add_filter('show_admin_bar', array(self::class, 'filterAdminBar'));
         add_filter('login_redirect', array(self::class, 'filterLoginRedirect'), 10, 3);
     }
@@ -34,6 +35,26 @@ final class AccessControl
         exit;
     }
 
+    public static function blockLoyaltyOnlyWooAccount(): void
+    {
+        if (
+            ! is_user_logged_in()
+            || current_user_can('manage_options')
+            || ! function_exists('is_account_page')
+            || ! is_account_page()
+        ) {
+            return;
+        }
+
+        $user = wp_get_current_user();
+        if (! self::isLoyaltyOnlyCustomer($user)) {
+            return;
+        }
+
+        wp_safe_redirect(AccountPage::url());
+        exit;
+    }
+
     public static function filterAdminBar(bool $show): bool
     {
         if (! is_user_logged_in() || current_user_can('manage_options')) {
@@ -50,6 +71,15 @@ final class AccessControl
         }
 
         return self::isRestricted($user) ? self::customerRedirect($user) : $redirect_to;
+    }
+
+    private static function isLoyaltyOnlyCustomer(\WP_User $user): bool
+    {
+        $roles = (array) $user->roles;
+
+        return in_array(RoleManager::CUSTOMER_ROLE, $roles, true)
+            && ! in_array('customer', $roles, true)
+            && ! user_can($user, 'manage_woocommerce');
     }
 
     private static function isRestricted(\WP_User $user): bool

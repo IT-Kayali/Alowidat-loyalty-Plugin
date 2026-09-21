@@ -2,6 +2,21 @@
 
 All notable changes to **IT-Kayali Loyalty** are documented here.
 
+## [0.2.1] - 2026-09-21
+
+### Fixed
+
+- Loyalty-only customers are redirected from WooCommerce **My Account** and its account endpoints back to **Treuekonto**.
+- The WooCommerce account area remains available for future explicitly upgraded customers that receive the WooCommerce `customer` role.
+- Membership dates now use the unambiguous German-style `dd.mm.yyyy` display.
+- Loyalty buttons use stronger scoped styles so active theme button rules cannot make the primary action appear disabled or unreadable.
+
+### Verified
+
+- PHP syntax validation passes for all plugin PHP files.
+- Plugin header/runtime/readme versions are aligned at `0.2.1`.
+- Installable ZIP is built from the same GitHub commit by CI.
+
 ## [0.2.0] - 2026-09-21
 
 ### Added
