@@ -16,6 +16,7 @@ if ('1' !== (string) get_option('itk_loyalty_delete_data_on_uninstall', '0')) {
 global $wpdb;
 
 $tables = array(
+    $wpdb->prefix . 'itk_loyalty_tokens',
     $wpdb->prefix . 'itk_loyalty_external_refs',
     $wpdb->prefix . 'itk_loyalty_reservations',
     $wpdb->prefix . 'itk_loyalty_redemptions',
@@ -56,7 +57,13 @@ if ($administrator) {
 remove_role('itk_loyalty_customer');
 remove_role('itk_loyalty_staff');
 
+$page_id = (int) get_option('itk_loyalty_account_page_id', 0);
+if ($page_id > 0) {
+    wp_delete_post($page_id, true);
+}
+
 delete_option('itk_loyalty_version');
 delete_option('itk_loyalty_schema_version');
 delete_option('itk_loyalty_activated_at');
+delete_option('itk_loyalty_account_page_id');
 delete_option('itk_loyalty_delete_data_on_uninstall');

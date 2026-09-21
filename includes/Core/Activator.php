@@ -24,6 +24,7 @@ final class Activator
 
         Schema::install();
         RoleManager::install();
+        AccountPage::ensure();
 
         update_option('itk_loyalty_version', ITK_LOYALTY_VERSION, false);
         update_option('itk_loyalty_activated_at', current_time('mysql', true), false);

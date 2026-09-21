@@ -49,6 +49,11 @@ final class TableNames
         return self::withPrefix('itk_loyalty_branches');
     }
 
+    public static function tokens(): string
+    {
+        return self::withPrefix('itk_loyalty_tokens');
+    }
+
     /**
      * @return array<string, string>
      */
@@ -63,6 +68,7 @@ final class TableNames
             'reservations'  => self::reservations(),
             'external_refs' => self::externalRefs(),
             'branches'      => self::branches(),
+            'tokens'        => self::tokens(),
         );
     }
 

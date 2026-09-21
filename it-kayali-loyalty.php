@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       IT-Kayali Loyalty
  * Plugin URI:        https://github.com/IT-Kayali/Alowidat-loyalty-Plugin
- * Description:       Modular loyalty, points and digital stamp-card foundation for WordPress and optional WooCommerce integration.
- * Version:           0.1.0
+ * Description:       Modular loyalty, points and digital stamp-card system for WordPress with optional WooCommerce integration.
+ * Version:           0.2.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Author:            IT-Kayali
@@ -16,11 +16,11 @@
 defined('ABSPATH') || exit;
 
 if (! defined('ITK_LOYALTY_VERSION')) {
-    define('ITK_LOYALTY_VERSION', '0.1.0');
+    define('ITK_LOYALTY_VERSION', '0.2.0');
 }
 
 if (! defined('ITK_LOYALTY_SCHEMA_VERSION')) {
-    define('ITK_LOYALTY_SCHEMA_VERSION', '1');
+    define('ITK_LOYALTY_SCHEMA_VERSION', '2');
 }
 
 if (! defined('ITK_LOYALTY_FILE')) {

@@ -3,40 +3,91 @@ Contributors: it-kayali
 Tags: loyalty, points, rewards, stamp-card, woocommerce
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: Proprietary
 
-Modular loyalty, points and digital stamp-card foundation for WordPress with optional WooCommerce integration.
+Modular loyalty and customer-account foundation for WordPress with optional WooCommerce integration.
 
 == Description ==
 
-IT-Kayali Loyalty is being developed as the central loyalty system for Alowidat.
+IT-Kayali Loyalty is the central loyalty system being developed for Alowidat.
 
-Version 0.1.0 is the Phase 1 technical foundation. It creates the plugin lifecycle, namespaced architecture, schema migration basis, dedicated loyalty tables and restricted loyalty roles/capabilities. WooCommerce is intentionally optional.
+Version 0.2.0 adds a usable loyalty-only customer account flow:
 
-Customer registration, digital cards, QR scanning, staff workflows and points/reward operations will be implemented phase by phase and are not exposed in this release.
+* registration with name and email only
+* email verification
+* restricted loyalty customer role
+* common frontend login page
+* one-time Magic Link login for verified loyalty customers
+* resend-verification flow
+* customer profile with ledger-derived point balance
+* name update
+* safe pending email change with verification of the new address
+* automatic Treuekonto page using [itk_loyalty_account]
+* rate limiting and hashed one-time security tokens
+
+Existing WordPress/WooCommerce users are not silently enrolled into loyalty. Explicit WooCommerce opt-in/linking is planned for Phase 3.
+
+Digital cards, QR, stamps, staff workflow and point earning/redemption are later phases and are not exposed yet.
 
 == Installation ==
 
 1. Upload the plugin ZIP using Plugins > Add New > Upload Plugin.
-2. Activate IT-Kayali Loyalty.
-3. Activation creates the Phase 1 schema and roles/capabilities.
+2. Activate IT-Kayali Loyalty or replace version 0.1.0 if already installed.
+3. Keep the plugin active; schema version 2 is applied automatically.
+4. Open the automatically created Treuekonto page.
+5. Verify that WordPress can send email before production use.
+
+== Shortcodes ==
+
+= [itk_loyalty_account] =
+Primary unified account/login/registration page.
+
+= [itk_loyalty_login] =
+Optional standalone login and Magic-Link forms.
+
+= [itk_loyalty_register] =
+Optional standalone loyalty registration form.
 
 == Frequently Asked Questions ==
 
-= Does version 0.1.0 already award points? =
+= Does version 0.2.0 already award points? =
 
-No. This release establishes the safe technical foundation only.
+No. It can display the current ledger-derived balance, but earning/redemption services are not active yet.
 
 = Is WooCommerce required? =
 
-No. The loyalty core is designed to work independently. WooCommerce integration is planned as an optional module.
+No. The loyalty core is designed to work independently. WooCommerce integration is an optional later module.
+
+= Why can an existing WooCommerce email not register as a new loyalty-only account? =
+
+To prevent duplicate identities and silent enrollment. Existing shop users will explicitly activate/link loyalty in Phase 3.
+
+= How does a loyalty-only customer log in? =
+
+After email verification, the intended method is a one-time Magic Link sent to the verified email address. The common page also contains the normal WordPress password login for existing accounts.
+
+= What happens when a customer changes email? =
+
+The new address remains pending until it is verified. The previous email remains valid until confirmation succeeds.
 
 = Are plugin data removed on deactivation? =
 
 No. Deactivation is non-destructive. Uninstall also preserves loyalty data by default.
 
 == Changelog ==
+
+= 0.2.0 =
+* Added loyalty-only registration with name and email.
+* Added email verification and resend flow.
+* Added hashed expiring one-time token table.
+* Added Magic Link login for verified loyalty customers.
+* Added common frontend password login.
+* Added automatic Treuekonto page and account/login/register shortcodes.
+* Added customer profile and ledger-derived balance display.
+* Added verified pending-email change workflow.
+* Added rate limiting and frontend-only role restrictions.
+* Added schema migration from version 1 to version 2.
 
 = 0.1.0 =
 * Initial Phase 1 foundation.

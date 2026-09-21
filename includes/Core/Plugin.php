@@ -7,7 +7,14 @@
 
 namespace ITKayali\Loyalty\Core;
 
+use ITKayali\Loyalty\Accounts\AccountService;
+use ITKayali\Loyalty\Accounts\FrontendController;
+use ITKayali\Loyalty\Accounts\MemberRepository;
+use ITKayali\Loyalty\Accounts\TokenRepository;
 use ITKayali\Loyalty\Database\Schema;
+use ITKayali\Loyalty\Roles\RoleManager;
+use ITKayali\Loyalty\Security\AccessControl;
+use ITKayali\Loyalty\Security\RateLimiter;
 
 final class Plugin
 {
@@ -43,5 +50,15 @@ final class Plugin
         );
 
         Schema::maybe_upgrade();
+        RoleManager::install();
+        AccessControl::register();
+
+        add_action('init', array(AccountPage::class, 'ensure'), 5);
+
+        $members = new MemberRepository();
+        $tokens  = new TokenRepository();
+        $service = new AccountService($members, $tokens, new RateLimiter());
+
+        (new FrontendController($service, $members))->register();
     }
 }

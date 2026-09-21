@@ -37,6 +37,9 @@ final class Schema
             name varchar(191) NOT NULL,
             email varchar(190) NOT NULL,
             email_normalized varchar(190) NOT NULL,
+            pending_email varchar(190) NULL,
+            pending_email_normalized varchar(190) NULL,
+            pending_email_requested_at datetime NULL,
             email_verified_at datetime NULL,
             status varchar(32) NOT NULL DEFAULT 'pending',
             created_at datetime NOT NULL,
@@ -44,6 +47,7 @@ final class Schema
             PRIMARY KEY  (id),
             UNIQUE KEY member_uuid (member_uuid),
             UNIQUE KEY email_normalized (email_normalized),
+            KEY pending_email_normalized (pending_email_normalized),
             KEY status (status)
         ) {$charset_collate};";
 
@@ -167,10 +171,28 @@ final class Schema
             KEY local_reference (local_type, local_id)
         ) {$charset_collate};";
 
+        $sql[] = "CREATE TABLE {$tables['tokens']} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            token_hash char(64) NOT NULL,
+            member_id bigint(20) unsigned NOT NULL,
+            wp_user_id bigint(20) unsigned NOT NULL,
+            type varchar(32) NOT NULL,
+            metadata longtext NULL,
+            expires_at datetime NOT NULL,
+            used_at datetime NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY token_hash (token_hash),
+            KEY member_type (member_id, type),
+            KEY wp_user_id (wp_user_id),
+            KEY expires_at (expires_at)
+        ) {$charset_collate};";
+
         foreach ($sql as $statement) {
             dbDelta($statement);
         }
 
         update_option(self::OPTION, ITK_LOYALTY_SCHEMA_VERSION, false);
+        update_option('itk_loyalty_version', ITK_LOYALTY_VERSION, false);
     }
 }
