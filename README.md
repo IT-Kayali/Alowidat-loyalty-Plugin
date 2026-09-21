@@ -181,6 +181,8 @@ These business rules remain planned but are **not active in version 0.2.0**:
 
 ## Versioning
 
+GitHub Actions validates PHP syntax and version consistency on every push/PR, builds the installable ZIP, and on a successful push to `main` creates the matching `vX.Y.Z` Git tag/GitHub Release when it does not already exist. The release asset is built from the same commit and excludes repository-only files such as `.github`, `.gitignore` and `.gitkeep`.
+
 The project follows SemVer-oriented releases. Plugin header, runtime constant, README/readme and packaged ZIP must represent the same version.
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.

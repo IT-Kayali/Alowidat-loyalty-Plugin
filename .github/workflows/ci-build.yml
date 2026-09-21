@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-and-package:
@@ -61,3 +61,24 @@ jobs:
           path: it-kayali-loyalty-*.zip
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/^ \* Version:[[:space:]]*//p' it-kayali-loyalty.php | head -n1)"
+          TAG="v$VERSION"
+          ZIP="it-kayali-loyalty-$VERSION.zip"
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { capture=1; next }
+            capture && /^## \\[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving the existing tag/release unchanged."
+          else
+            gh release create "$TAG" "$ZIP" --target "$GITHUB_SHA" --title "IT-Kayali Loyalty $TAG" --notes-file release-notes.md
+          fi
