@@ -65,7 +65,7 @@ final class AccountEndpoint
         }
 
         $user = wp_get_current_user();
-        if (! self::hasLoyaltyRole($user)) {
+        if (! self::hasLoyaltyRole($user) && ! self::isShopCustomer($user)) {
             return $items;
         }
 
@@ -142,7 +142,12 @@ final class AccountEndpoint
 
     public static function redirectLegacyTreuekonto(): void
     {
-        if (! is_user_logged_in() || ! self::hasLoyaltyRole(wp_get_current_user())) {
+        if (! is_user_logged_in()) {
+            return;
+        }
+
+        $user = wp_get_current_user();
+        if (! self::hasLoyaltyRole($user) && ! self::isShopCustomer($user)) {
             return;
         }
 
@@ -185,6 +190,11 @@ final class AccountEndpoint
     private static function hasLoyaltyRole(\WP_User $user): bool
     {
         return in_array(RoleManager::CUSTOMER_ROLE, (array) $user->roles, true);
+    }
+
+    private static function isShopCustomer(\WP_User $user): bool
+    {
+        return in_array('customer', (array) $user->roles, true);
     }
 
     private static function isLoyaltyOnlyCustomer(\WP_User $user): bool

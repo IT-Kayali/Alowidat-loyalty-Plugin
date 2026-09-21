@@ -16,6 +16,7 @@ use ITKayali\Loyalty\Roles\RoleManager;
 use ITKayali\Loyalty\Security\AccessControl;
 use ITKayali\Loyalty\Security\RateLimiter;
 use ITKayali\Loyalty\Integrations\WooCommerce\AccountEndpoint;
+use ITKayali\Loyalty\Integrations\WooCommerce\AccountLinker;
 
 final class Plugin
 {
@@ -56,14 +57,17 @@ final class Plugin
 
         add_action('init', array(AccountPage::class, 'ensure'), 5);
 
-        $members = new MemberRepository();
-        $tokens  = new TokenRepository();
-        $service = new AccountService($members, $tokens, new RateLimiter());
-
-        (new FrontendController($service, $members))->register();
+        $members     = new MemberRepository();
+        $tokens      = new TokenRepository();
+        $rateLimiter = new RateLimiter();
+        $service     = new AccountService($members, $tokens, $rateLimiter);
+        $wooLinker   = null;
 
         if (AccountEndpoint::isAvailable()) {
+            $wooLinker = new AccountLinker($members, $tokens, $rateLimiter);
             AccountEndpoint::register();
         }
+
+        (new FrontendController($service, $members, $wooLinker))->register();
     }
 }

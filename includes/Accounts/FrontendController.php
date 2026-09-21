@@ -8,12 +8,14 @@
 namespace ITKayali\Loyalty\Accounts;
 
 use ITKayali\Loyalty\Core\AccountPage;
+use ITKayali\Loyalty\Integrations\WooCommerce\AccountLinker;
 
 final class FrontendController
 {
     public function __construct(
         private AccountService $service,
-        private MemberRepository $members
+        private MemberRepository $members,
+        private ?AccountLinker $wooLinker = null
     ) {
     }
 
@@ -83,6 +85,12 @@ final class FrontendController
             case 'update_profile':
                 $this->handleProfileUpdate();
                 break;
+            case 'activate_woocommerce_loyalty':
+                $this->handleWooCommerceLoyaltyActivation();
+                break;
+            case 'upgrade_woocommerce':
+                $this->handleWooCommerceUpgrade();
+                break;
         }
     }
 
@@ -100,12 +108,18 @@ final class FrontendController
 
         $member = $this->members->findByWpUserId(get_current_user_id());
         if (! $member) {
+            $user = wp_get_current_user();
+
+            if ($this->wooLinker && $this->wooLinker->isShopCustomer($user)) {
+                return $this->wrap($this->renderMessages() . $this->renderWooCommerceActivation($user));
+            }
+
             return $this->wrap(
                 $this->renderMessages()
                 . '<section class="itk-loyalty-panel">'
                 . '<h2>' . esc_html__('Treueprogramm', 'it-kayali-loyalty') . '</h2>'
-                . '<p>' . esc_html__('Dieses Benutzerkonto ist noch nicht mit dem Treueprogramm verbunden. Die freiwillige Aktivierung für bestehende Shop-Konten folgt in der WooCommerce-Phase.', 'it-kayali-loyalty') . '</p>'
-                . '<p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="' . esc_url(wp_logout_url(AccountPage::url())) . '">' . esc_html__('Abmelden', 'it-kayali-loyalty') . '</a></p>'
+                . '<p>' . esc_html__('Dieses Benutzerkonto ist noch nicht mit dem Treueprogramm verbunden.', 'it-kayali-loyalty') . '</p>'
+                . '<p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="' . esc_url(wp_logout_url(AccountPage::customerUrl())) . '">' . esc_html__('Abmelden', 'it-kayali-loyalty') . '</a></p>'
                 . '</section>'
             );
         }
@@ -120,7 +134,7 @@ final class FrontendController
     public function renderLogin(): string
     {
         if (is_user_logged_in()) {
-            return '<p><a href="' . esc_url(AccountPage::url()) . '">' . esc_html__('Zum Treuekonto', 'it-kayali-loyalty') . '</a></p>';
+            return '<p><a href="' . esc_url(AccountPage::customerUrl()) . '">' . esc_html__('Zum Treuekonto', 'it-kayali-loyalty') . '</a></p>';
         }
 
         return $this->wrap($this->renderMessages() . '<section class="itk-loyalty-panel">' . $this->renderLoginForms() . '</section>');
@@ -129,7 +143,7 @@ final class FrontendController
     public function renderRegister(): string
     {
         if (is_user_logged_in()) {
-            return '<p><a href="' . esc_url(AccountPage::url()) . '">' . esc_html__('Zum Treuekonto', 'it-kayali-loyalty') . '</a></p>';
+            return '<p><a href="' . esc_url(AccountPage::customerUrl()) . '">' . esc_html__('Zum Treuekonto', 'it-kayali-loyalty') . '</a></p>';
         }
 
         return $this->wrap($this->renderMessages() . '<section class="itk-loyalty-panel">' . $this->renderRegisterForm() . '</section>');
@@ -210,6 +224,63 @@ final class FrontendController
         $email = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
         $this->service->resendVerification((string) $email);
         $this->redirect('verification_requested');
+    }
+
+    private function handleWooCommerceLoyaltyActivation(): void
+    {
+        if (! is_user_logged_in()) {
+            $this->redirect('login_required');
+        }
+
+        if (
+            ! isset($_POST['_itk_loyalty_nonce'])
+            || ! wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['_itk_loyalty_nonce'])),
+                'itk_loyalty_woocommerce_optin'
+            )
+        ) {
+            $this->redirect('security_error');
+        }
+
+        if (! $this->wooLinker) {
+            $this->redirect('loyalty_activation_error');
+        }
+
+        $result = $this->wooLinker->activateForExistingCustomer(get_current_user_id());
+
+        if (is_wp_error($result)) {
+            $this->redirect(
+                'mail_failed' === $result->get_error_code()
+                    ? 'loyalty_activation_mail_failed'
+                    : 'loyalty_activation_error'
+            );
+        }
+
+        $this->redirect('loyalty_activation_pending');
+    }
+
+    private function handleWooCommerceUpgrade(): void
+    {
+        if (! is_user_logged_in()) {
+            $this->redirect('login_required');
+        }
+
+        if (
+            ! isset($_POST['_itk_loyalty_nonce'])
+            || ! wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['_itk_loyalty_nonce'])),
+                'itk_loyalty_woocommerce_upgrade'
+            )
+        ) {
+            $this->redirect('security_error');
+        }
+
+        if (! $this->wooLinker) {
+            $this->redirect('shop_upgrade_error');
+        }
+
+        $result = $this->wooLinker->upgradeLoyaltyToShop(get_current_user_id());
+        $this->redirect(is_wp_error($result) ? 'shop_upgrade_error' : 'shop_upgrade_success');
     }
 
     private function handleProfileUpdate(): void
@@ -309,6 +380,30 @@ final class FrontendController
         return (string) ob_get_clean();
     }
 
+    private function renderWooCommerceActivation(\WP_User $user): string
+    {
+        ob_start();
+        ?>
+        <section class="itk-loyalty-panel">
+            <p class="itk-loyalty-eyebrow"><?php echo esc_html__('Treueprogramm', 'it-kayali-loyalty'); ?></p>
+            <h2><?php echo esc_html__('Treuekonto aktivieren', 'it-kayali-loyalty'); ?></h2>
+            <p><?php echo esc_html__('Dein Shop-Konto bleibt unverändert. Mit der freiwilligen Aktivierung wird dieses Benutzerkonto zusätzlich mit einem Treuekonto verbunden.', 'it-kayali-loyalty'); ?></p>
+            <div class="itk-loyalty-meta">
+                <div><span><?php echo esc_html__('Name', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html((string) $user->display_name); ?></strong></div>
+                <div><span><?php echo esc_html__('E-Mail', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html((string) $user->user_email); ?></strong></div>
+                <div><span><?php echo esc_html__('Shop-Konto', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html__('Aktiv', 'it-kayali-loyalty'); ?></strong></div>
+            </div>
+            <p class="itk-loyalty-muted"><?php echo esc_html__('Nach der Aktivierung senden wir einen Bestätigungslink an deine Shop-E-Mail-Adresse. Erst nach der Bestätigung wird das Treuekonto aktiv.', 'it-kayali-loyalty'); ?></p>
+            <form method="post" class="itk-loyalty-form">
+                <?php wp_nonce_field('itk_loyalty_woocommerce_optin', '_itk_loyalty_nonce'); ?>
+                <input type="hidden" name="itk_loyalty_action" value="activate_woocommerce_loyalty">
+                <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Treueprogramm aktivieren', 'it-kayali-loyalty'); ?></button>
+            </form>
+        </section>
+        <?php
+        return (string) ob_get_clean();
+    }
+
     private function renderVerificationPending(array $member): string
     {
         ob_start();
@@ -323,7 +418,7 @@ final class FrontendController
                 <input type="hidden" name="email" value="<?php echo esc_attr((string) $member['email']); ?>">
                 <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Bestätigungslink erneut senden', 'it-kayali-loyalty'); ?></button>
             </form>
-            <p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="<?php echo esc_url(wp_logout_url(AccountPage::url())); ?>"><?php echo esc_html__('Abmelden', 'it-kayali-loyalty'); ?></a></p>
+            <p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="<?php echo esc_url(wp_logout_url(AccountPage::customerUrl())); ?>"><?php echo esc_html__('Abmelden', 'it-kayali-loyalty'); ?></a></p>
         </section>
         <?php
         return (string) ob_get_clean();
@@ -377,13 +472,26 @@ final class FrontendController
             </form>
         </section>
 
+        <?php if ($this->wooLinker && $this->wooLinker->isLoyaltyOnlyCustomer(wp_get_current_user())) : ?>
+            <section class="itk-loyalty-panel">
+                <p class="itk-loyalty-eyebrow"><?php echo esc_html__('Optional', 'it-kayali-loyalty'); ?></p>
+                <h3><?php echo esc_html__('Shop-Konto freischalten', 'it-kayali-loyalty'); ?></h3>
+                <p><?php echo esc_html__('Du behältst dein bestehendes Treuekonto, deine Mitglieds-ID, deinen Punktestand und deine komplette Historie. Zusätzlich werden Bestellungen, Adressen, Zahlungsarten und die weiteren WooCommerce-Kontobereiche freigeschaltet.', 'it-kayali-loyalty'); ?></p>
+                <form method="post" class="itk-loyalty-form">
+                    <?php wp_nonce_field('itk_loyalty_woocommerce_upgrade', '_itk_loyalty_nonce'); ?>
+                    <input type="hidden" name="itk_loyalty_action" value="upgrade_woocommerce">
+                    <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Auf Shop-Konto upgraden', 'it-kayali-loyalty'); ?></button>
+                </form>
+            </section>
+        <?php endif; ?>
+
         <section class="itk-loyalty-panel itk-loyalty-meta">
             <div><span><?php echo esc_html__('Status', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html('active' === (string) $member['status'] ? __('Aktiv', 'it-kayali-loyalty') : ucfirst((string) $member['status'])); ?></strong></div>
             <div><span><?php echo esc_html__('E-Mail bestätigt', 'it-kayali-loyalty'); ?></span><strong><?php echo ! empty($member['email_verified_at']) ? esc_html__('Ja', 'it-kayali-loyalty') : esc_html__('Nein', 'it-kayali-loyalty'); ?></strong></div>
             <div><span><?php echo esc_html__('Mitglied seit', 'it-kayali-loyalty'); ?></span><strong><?php echo esc_html(mysql2date('d.m.Y', (string) $member['created_at'], true)); ?></strong></div>
         </section>
 
-        <p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="<?php echo esc_url(wp_logout_url(AccountPage::url())); ?>"><?php echo esc_html__('Abmelden', 'it-kayali-loyalty'); ?></a></p>
+        <p><a class="itk-loyalty-button itk-loyalty-button-secondary" href="<?php echo esc_url(wp_logout_url(AccountPage::customerUrl())); ?>"><?php echo esc_html__('Abmelden', 'it-kayali-loyalty'); ?></a></p>
         <?php
         return (string) ob_get_clean();
     }
@@ -407,7 +515,12 @@ final class FrontendController
             'profile_mail_failed'      => array('error', __('Die Änderung wurde vorgemerkt, aber die Bestätigungs-E-Mail konnte nicht versendet werden. Die bisherige Adresse bleibt gültig.', 'it-kayali-loyalty')),
             'profile_error'            => array('error', __('Die Änderungen konnten nicht vollständig gespeichert werden. Bitte prüfe deine Angaben.', 'it-kayali-loyalty')),
             'security_error'           => array('error', __('Die Sicherheitsprüfung ist fehlgeschlagen. Bitte lade die Seite neu und versuche es erneut.', 'it-kayali-loyalty')),
-            'login_required'           => array('error', __('Bitte melde dich zuerst an.', 'it-kayali-loyalty')),
+            'login_required'                 => array('error', __('Bitte melde dich zuerst an.', 'it-kayali-loyalty')),
+            'loyalty_activation_pending'      => array('success', __('Treueprogramm aktiviert. Bitte bestätige jetzt deine E-Mail-Adresse über den zugesendeten Link.', 'it-kayali-loyalty')),
+            'loyalty_activation_mail_failed'  => array('error', __('Das Shop-Konto wurde mit dem Treueprogramm verbunden, aber die Bestätigungs-E-Mail konnte nicht versendet werden. Bitte fordere den Link erneut an.', 'it-kayali-loyalty')),
+            'loyalty_activation_error'        => array('error', __('Das Treueprogramm konnte für dieses Shop-Konto nicht aktiviert werden.', 'it-kayali-loyalty')),
+            'shop_upgrade_success'            => array('success', __('Dein Treuekonto wurde erfolgreich zum Shop-Konto erweitert. Deine Loyalty-Daten bleiben unverändert.', 'it-kayali-loyalty')),
+            'shop_upgrade_error'              => array('error', __('Das Shop-Konto konnte nicht freigeschaltet werden. Bitte versuche es erneut.', 'it-kayali-loyalty')),
         );
 
         if (! isset($messages[$code])) {
@@ -425,7 +538,9 @@ final class FrontendController
 
     private function redirect(string $message): never
     {
-        $url = add_query_arg('itk-loyalty-message', $message, AccountPage::url());
+        $base = is_user_logged_in() ? AccountPage::customerUrl() : AccountPage::url();
+        $url  = add_query_arg('itk-loyalty-message', $message, $base);
+
         wp_safe_redirect($url);
         exit;
     }

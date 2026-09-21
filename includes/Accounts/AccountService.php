@@ -152,7 +152,11 @@ final class AccountService
         }
 
         $member = $this->members->findByWpUserId((int) $user->ID);
-        if ($member && ('active' !== (string) $member['status'] || empty($member['email_verified_at']))) {
+        if (
+            $member
+            && ('active' !== (string) $member['status'] || empty($member['email_verified_at']))
+            && $this->isLoyaltyOnlyUser($user)
+        ) {
             wp_logout();
             return new \WP_Error('email_unverified', __('Bitte bestätige zuerst deine E-Mail-Adresse.', 'it-kayali-loyalty'));
         }
@@ -320,6 +324,15 @@ final class AccountService
 
         clean_user_cache($user_id);
         return true;
+    }
+
+    private function isLoyaltyOnlyUser(\WP_User $user): bool
+    {
+        $roles = (array) $user->roles;
+
+        return in_array(RoleManager::CUSTOMER_ROLE, $roles, true)
+            && ! in_array('customer', $roles, true)
+            && ! user_can($user, 'manage_woocommerce');
     }
 
     private function loginUser(int $user_id): bool
