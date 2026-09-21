@@ -327,6 +327,7 @@ final class FrontendController
             </label>
             <button type="submit" class="itk-loyalty-button"><?php echo esc_html__('Anmelden', 'it-kayali-loyalty'); ?></button>
         </form>
+        <p><a href="<?php echo esc_url(wp_lostpassword_url(AccountPage::url())); ?>"><?php echo esc_html__('Passwort vergessen?', 'it-kayali-loyalty'); ?></a></p>
 
         <div class="itk-loyalty-divider"><span><?php echo esc_html__('oder', 'it-kayali-loyalty'); ?></span></div>
 

@@ -21,6 +21,8 @@ All notable changes to **IT-Kayali Loyalty** are documented here.
 - Pending loyalty verification no longer blocks a pre-existing WooCommerce customer from using the normal shop login; only loyalty-only accounts remain verification-gated.
 - Authenticated loyalty redirects now target the central `/my-account/treuekonto/` endpoint when WooCommerce is available.
 - The standalone `/treuekonto/` page remains the logged-out registration/login fallback.
+- Logged-out WooCommerce My Account visits are redirected to the shared loyalty login/registration page so all customer account types use the same sign-in form; WooCommerce lost-password remains available.
+- WooCommerce account-email changes are blocked for linked loyalty customers and must be performed through **Treuekonto**, preserving the verified email-change workflow.
 
 ### Verified
 

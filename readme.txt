@@ -31,6 +31,8 @@ Version 0.3.0 adds Phase 3 WooCommerce account linking on top of the loyalty cus
 * existing WooCommerce customers can explicitly activate loyalty from Treuekonto
 * loyalty-only customers can explicitly upgrade the same user to a WooCommerce customer account
 * member UUID, ledger balance and loyalty history are preserved during the shop-account upgrade
+* all customer types use the same shared login; logged-out WooCommerce My Account redirects to the Treuekonto login page
+* linked loyalty customers change their account email only through Treuekonto so email verification cannot be bypassed
 * German-style membership date display and theme-resistant loyalty buttons
 
 Existing WordPress/WooCommerce users are never silently enrolled into loyalty. Version 0.3.0 provides explicit opt-in from the authenticated WooCommerce account.

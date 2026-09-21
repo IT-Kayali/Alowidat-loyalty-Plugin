@@ -7,6 +7,7 @@
 
 namespace ITKayali\Loyalty\Integrations\WooCommerce;
 
+use ITKayali\Loyalty\Accounts\MemberRepository;
 use ITKayali\Loyalty\Core\AccountPage;
 use ITKayali\Loyalty\Roles\RoleManager;
 
@@ -29,9 +30,11 @@ final class AccountEndpoint
         add_filter('woocommerce_get_query_vars', array(self::class, 'addQueryVar'));
         add_filter('woocommerce_account_menu_items', array(self::class, 'filterMenuItems'), 20);
         add_action('woocommerce_account_' . self::ENDPOINT . '_endpoint', array(self::class, 'renderEndpoint'));
+        add_action('template_redirect', array(self::class, 'redirectLoggedOutAccountToSharedLogin'), 1);
         add_action('template_redirect', array(self::class, 'redirectAccountRoutes'), 2);
         add_action('template_redirect', array(self::class, 'redirectLegacyTreuekonto'), 3);
         add_action('wp_enqueue_scripts', array(self::class, 'enqueueAssets'));
+        add_action('woocommerce_save_account_details_errors', array(self::class, 'protectLinkedAccountEmail'), 10, 2);
     }
 
     public static function registerEndpoint(): void
@@ -110,6 +113,24 @@ final class AccountEndpoint
         echo do_shortcode('[itk_loyalty_account]'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
+    public static function redirectLoggedOutAccountToSharedLogin(): void
+    {
+        if (
+            is_user_logged_in()
+            || ! function_exists('is_account_page')
+            || ! is_account_page()
+        ) {
+            return;
+        }
+
+        if (function_exists('is_wc_endpoint_url') && is_wc_endpoint_url('lost-password')) {
+            return;
+        }
+
+        wp_safe_redirect(AccountPage::url());
+        exit;
+    }
+
     public static function redirectAccountRoutes(): void
     {
         if (
@@ -166,6 +187,31 @@ final class AccountEndpoint
 
         wp_safe_redirect($url);
         exit;
+    }
+
+    public static function protectLinkedAccountEmail(\WP_Error $errors, $user): void
+    {
+        $user_id = is_object($user) && isset($user->ID) ? (int) $user->ID : 0;
+        if ($user_id <= 0) {
+            return;
+        }
+
+        $member = (new MemberRepository())->findByWpUserId($user_id);
+        if (! $member) {
+            return;
+        }
+
+        $submitted_email = is_object($user) && isset($user->user_email)
+            ? MemberRepository::normalizeEmail((string) $user->user_email)
+            : '';
+        $loyalty_email = MemberRepository::normalizeEmail((string) $member['email']);
+
+        if ('' !== $submitted_email && $submitted_email !== $loyalty_email) {
+            $errors->add(
+                'itk_loyalty_email_managed',
+                __('Bitte ändere deine E-Mail-Adresse im Bereich Treuekonto. Dort wird die neue Adresse sicher bestätigt und anschließend für dein gesamtes Konto übernommen.', 'it-kayali-loyalty')
+            );
+        }
     }
 
     public static function enqueueAssets(): void

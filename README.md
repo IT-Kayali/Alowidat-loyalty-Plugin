@@ -165,6 +165,7 @@ Current protections include:
 - rate limiting for public email-triggering actions
 - generic Magic-Link/resend responses to reduce account enumeration
 - duplicate loyalty-email protection
+- WooCommerce account-email guard for linked loyalty customers; verified email changes remain centralized in Treuekonto
 - no customer data in any QR because QR functionality is not implemented yet
 
 Later points/redemption endpoints will additionally require transactional locking, idempotency and concurrency controls.
