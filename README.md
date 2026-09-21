@@ -171,7 +171,7 @@ Later points/redemption endpoints will additionally require transactional lockin
 
 ## Points and rewards rules
 
-These business rules remain planned but are **not active in version 0.2.0**:
+These business rules remain planned but are **not active in version 0.3.0**:
 
 - eligible 50 ml perfume: 1 point per purchased unit
 - eligible 100 ml perfume: 1 point per purchased unit

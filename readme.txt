@@ -58,7 +58,7 @@ Optional standalone loyalty registration form.
 
 == Frequently Asked Questions ==
 
-= Does version 0.2.0 already award points? =
+= Does version 0.3.0 already award points? =
 
 No. It can display the current ledger-derived balance, but earning/redemption services are not active yet.
 
