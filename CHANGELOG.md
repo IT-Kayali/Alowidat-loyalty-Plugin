@@ -2,6 +2,33 @@
 
 All notable changes to **IT-Kayali Loyalty** are documented here.
 
+## [0.3.0] - 2026-09-21
+
+### Added
+
+- Phase 3 explicit WooCommerce loyalty opt-in for existing WooCommerce customers.
+- Existing shop customers now receive a **Treuekonto** entry in WooCommerce My Account even before loyalty is activated.
+- Shop customers can explicitly activate loyalty from `/my-account/treuekonto/`; the existing WordPress/WooCommerce user is reused instead of creating a duplicate user.
+- WooCommerce opt-in creates one independent loyalty member linked to the existing user and requires email confirmation before the loyalty member becomes active.
+- Loyalty-only customers can explicitly upgrade the same WordPress user to the WooCommerce `customer` role.
+- Loyalty-to-shop upgrades preserve the existing loyalty `member_uuid`, ledger balance, reservations, redemptions and history because no new loyalty member is created.
+- After a loyalty-to-shop upgrade, the normal WooCommerce My Account menu becomes available while **Treuekonto** remains an additional entry.
+- Rate limiting and nonces protect both WooCommerce opt-in and loyalty-to-shop upgrade actions.
+- Integration hooks `itk_loyalty_woocommerce_optin_created` and `itk_loyalty_customer_upgraded_to_woocommerce` are available for future modules.
+
+### Changed
+
+- Pending loyalty verification no longer blocks a pre-existing WooCommerce customer from using the normal shop login; only loyalty-only accounts remain verification-gated.
+- Authenticated loyalty redirects now target the central `/my-account/treuekonto/` endpoint when WooCommerce is available.
+- The standalone `/treuekonto/` page remains the logged-out registration/login fallback.
+
+### Verified
+
+- PHP syntax validation passes for all plugin PHP files.
+- Plugin header/runtime/readme versions are aligned at `0.3.0`.
+- No database schema migration is required; schema version 2 remains current.
+- Installable ZIP is built from the same GitHub commit by CI.
+
 ## [0.2.2] - 2026-09-21
 
 ### Changed

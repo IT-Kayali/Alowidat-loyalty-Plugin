@@ -3,7 +3,7 @@ Contributors: it-kayali
 Tags: loyalty, points, rewards, stamp-card, woocommerce
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.2.2
+Stable tag: 0.3.0
 License: Proprietary
 
 Modular loyalty and customer-account foundation for WordPress with optional WooCommerce integration.
@@ -12,7 +12,7 @@ Modular loyalty and customer-account foundation for WordPress with optional WooC
 
 IT-Kayali Loyalty is the central loyalty system being developed for Alowidat.
 
-Version 0.2.2 provides the completed Phase 2 loyalty-only customer account flow:
+Version 0.3.0 adds Phase 3 WooCommerce account linking on top of the loyalty customer account flow:
 
 * registration with name and email only
 * email verification
@@ -28,11 +28,14 @@ Version 0.2.2 provides the completed Phase 2 loyalty-only customer account flow:
 * WooCommerce My Account integration at /my-account/treuekonto/
 * loyalty-only customers see only Treuekonto and Abmelden in the account menu
 * all other WooCommerce account endpoints redirect to Treuekonto for loyalty-only customers
+* existing WooCommerce customers can explicitly activate loyalty from Treuekonto
+* loyalty-only customers can explicitly upgrade the same user to a WooCommerce customer account
+* member UUID, ledger balance and loyalty history are preserved during the shop-account upgrade
 * German-style membership date display and theme-resistant loyalty buttons
 
-Existing WordPress/WooCommerce users are not silently enrolled into loyalty. Explicit WooCommerce opt-in/linking is planned for Phase 3.
+Existing WordPress/WooCommerce users are never silently enrolled into loyalty. Version 0.3.0 provides explicit opt-in from the authenticated WooCommerce account.
 
-Digital cards, QR, stamps, staff workflow and point earning/redemption are later phases and are not exposed yet.
+Digital cards, QR, stamps, staff workflow, automatic WooCommerce point earning/reversals and reward redemption are later phases and are not exposed yet.
 
 == Installation ==
 
@@ -65,7 +68,7 @@ No. The loyalty core is designed to work independently. WooCommerce integration 
 
 = Why can an existing WooCommerce email not register as a new loyalty-only account? =
 
-To prevent duplicate identities and silent enrollment. Existing shop users will explicitly activate/link loyalty in Phase 3.
+To prevent duplicate identities and silent enrollment. The customer should log into the existing WooCommerce account, open Treuekonto, and explicitly activate the loyalty program there.
 
 = How does a loyalty-only customer log in? =
 
@@ -80,6 +83,15 @@ The new address remains pending until it is verified. The previous email remains
 No. Deactivation is non-destructive. Uninstall also preserves loyalty data by default.
 
 == Changelog ==
+
+= 0.3.0 =
+* Add explicit loyalty opt-in for existing WooCommerce customers.
+* Reuse the existing WooCommerce/WordPress user instead of creating a duplicate account.
+* Require email confirmation before an existing shop customer's new loyalty member becomes active.
+* Add explicit loyalty-only to WooCommerce customer upgrade.
+* Preserve the same loyalty member UUID, ledger balance and history during upgrade.
+* Show the full WooCommerce My Account menu plus Treuekonto after upgrade.
+* Keep existing WooCommerce shop login available while a newly linked loyalty member is still pending verification.
 
 = 0.2.2 =
 * Move the logged-in loyalty customer area into WooCommerce My Account at /my-account/treuekonto/.
