@@ -2,6 +2,24 @@
 
 All notable changes to **IT-Kayali Loyalty** are documented here.
 
+## [0.2.2] - 2026-09-21
+
+### Changed
+
+- The logged-in loyalty customer area now lives inside WooCommerce **My Account** at `/my-account/treuekonto/` when WooCommerce is active.
+- Loyalty-only customers see only **Treuekonto** and **Abmelden** in the WooCommerce account navigation.
+- Direct visits to the WooCommerce dashboard, orders, addresses, payment methods and other account endpoints are redirected to **Treuekonto** for loyalty-only customers.
+- Logged-in loyalty customers visiting the legacy standalone `/treuekonto/` page are redirected to the WooCommerce **Treuekonto** endpoint.
+- The standalone `/treuekonto/` page remains available as the registration/login fallback and for installations without WooCommerce.
+- Future explicitly upgraded shop customers can keep the normal WooCommerce account menu while also receiving a **Treuekonto** entry.
+- Rewrite rules are refreshed once per plugin version when the WooCommerce endpoint is available.
+
+### Verified
+
+- PHP syntax validation passes for all plugin PHP files.
+- Plugin header/runtime/readme versions are aligned at `0.2.2`.
+- Installable ZIP is built from the same GitHub commit by CI.
+
 ## [0.2.1] - 2026-09-21
 
 ### Fixed

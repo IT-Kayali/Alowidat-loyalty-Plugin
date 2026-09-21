@@ -3,7 +3,7 @@ Contributors: it-kayali
 Tags: loyalty, points, rewards, stamp-card, woocommerce
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.2.1
+Stable tag: 0.2.2
 License: Proprietary
 
 Modular loyalty and customer-account foundation for WordPress with optional WooCommerce integration.
@@ -12,7 +12,7 @@ Modular loyalty and customer-account foundation for WordPress with optional WooC
 
 IT-Kayali Loyalty is the central loyalty system being developed for Alowidat.
 
-Version 0.2.1 provides the stabilized loyalty-only customer account flow:
+Version 0.2.2 provides the completed Phase 2 loyalty-only customer account flow:
 
 * registration with name and email only
 * email verification
@@ -25,7 +25,9 @@ Version 0.2.1 provides the stabilized loyalty-only customer account flow:
 * safe pending email change with verification of the new address
 * automatic Treuekonto page using [itk_loyalty_account]
 * rate limiting and hashed one-time security tokens
-* WooCommerce My Account redirect for loyalty-only customers
+* WooCommerce My Account integration at /my-account/treuekonto/
+* loyalty-only customers see only Treuekonto and Abmelden in the account menu
+* all other WooCommerce account endpoints redirect to Treuekonto for loyalty-only customers
 * German-style membership date display and theme-resistant loyalty buttons
 
 Existing WordPress/WooCommerce users are not silently enrolled into loyalty. Explicit WooCommerce opt-in/linking is planned for Phase 3.
@@ -78,6 +80,13 @@ The new address remains pending until it is verified. The previous email remains
 No. Deactivation is non-destructive. Uninstall also preserves loyalty data by default.
 
 == Changelog ==
+
+= 0.2.2 =
+* Move the logged-in loyalty customer area into WooCommerce My Account at /my-account/treuekonto/.
+* Show only Treuekonto and Abmelden for loyalty-only customers.
+* Redirect other WooCommerce account endpoints to Treuekonto for loyalty-only customers.
+* Preserve the standalone Treuekonto page for registration/login fallback and non-WooCommerce installations.
+* Keep future upgraded WooCommerce customers compatible with the full account menu plus Treuekonto.
 
 = 0.2.1 =
 * Redirect loyalty-only customers away from WooCommerce My Account to Treuekonto.

@@ -63,4 +63,20 @@ final class AccountPage
 
         return home_url('/treuekonto/');
     }
+
+    public static function customerUrl(): string
+    {
+        if (
+            class_exists('WooCommerce')
+            && function_exists('wc_get_page_permalink')
+            && function_exists('wc_get_endpoint_url')
+        ) {
+            $base = wc_get_page_permalink('myaccount');
+            if (is_string($base) && '' !== $base) {
+                return wc_get_endpoint_url('treuekonto', '', $base);
+            }
+        }
+
+        return self::url();
+    }
 }
